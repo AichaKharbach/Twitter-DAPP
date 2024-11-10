@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Twitter</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
+    <style>
+        /* Styles généraux */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .main-container {
+            background-color: #f9fbfc; 
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+            position: relative; /* Permet de positionner le bouton par rapport à ce conteneur */
+        }
+
+        /* Bouton de connexion au Wallet */
+        .wallet-button {
+            background-color: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            position: absolute;
+            top: 48px;
+            right: 30px; /* Aligne le bouton à droite */
+        }
+
+        .wallet-button:hover {
+            background-color: #1e40af;
+            transform: scale(1.05);
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 2px solid #ddd; /* Ligne sous le titre */
+        }
+        h1 {
+            color: #1d4ed8; /* Couleur bleue */
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 0;
+            padding: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Effet d'ombre */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Police moderne */
+            letter-spacing: 1px; /* Espacement des lettres */
+        }
+
+        h2 {
+            color: #000000;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center; /* Centre le titre */
+        }
+
+        button {
+            background-color: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        button:hover {
+            background-color: #1e40af;
+            transform: scale(1.05);
+        }
+
+        .post-section-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+
+        .left-align {
+            align-self: flex-start;
+            margin-bottom: 10px;
+            color: #000000;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        #postContainer {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #f1f5f9;
+            padding: 15px;
+            margin-bottom: 45px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #postContent {
+            flex-grow: 1; /* Permet à l'input de prendre tout l'espace disponible */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+        }
+
+        #postContainer button {
+            background-color: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            margin-left: auto; /* Aligne le bouton à droite */
+        }
+        #postContainer button:hover {
+            background-color: #1e40af;
+            transform: scale(1.05);
+        }
+
+        /* Style pour le fil d'actualité */
+        #feed {
+            width: 100%;
+            max-width: 700px; /* Largeur maximale de la box */
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .post-card {
+            background-color: #e8f0fe;
+            border: 1px solid #c2d1f0;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+        .post-card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .post-card p {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .post-card .post-actions,
+        .post-card .comment-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .post-card .post-author {
+            font-size: 0.9em;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .post-card .post-date {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        .post-card strong {
+            color: #1d4ed8;
+        }
+
+        .comment-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            background-color: #f1f5f9; /* Couleur de fond pour la section de commentaires */
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .comment {
+            background-color: #f9f9fb;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 8px;
+            margin: 5px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Conteneur pour l'input de commentaire et le bouton */
+        .comment-input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 630px; /* Augmentez cette valeur pour élargir la boîte de texte */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Alignement et espacement */
+        .comment-section h3, .post-card h3 {
+            font-size: 1.1em;
+            color: #444;
+            margin: 0 0 10px;
+            font-weight: 600;
+        }
+
+        /* Style des boutons spécifiques */
+        .post-actions button,
+        .comment-section button {
+            border-radius: 10px;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        .like-btn, .dislike-btn, .edit-btn, .comment-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border-radius: 10px;
+        }
+
+        /* Icônes pour les boutons */
+        .like-btn::before {
+            content: '👍';
+        }
+
+        .dislike-btn::before {
+            content: '👎';
+        }
+
+        .edit-btn::before {
+            content: '✏️';
+        }
+
+        .comment-btn::before {
+            content: '💬';
+        }
+
+        .delete-btn {
+            background-color: #e53e3e; /* Rouge */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background-color: #c53030; /* Rouge plus foncé au survol */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header-container">
+            <h1>Mini Twitter</h1>
+            <button class="wallet-button" onclick="connectWallet()">Se connecter au Wallet</button>
+        </div>
+    
+        <!-- Conteneur centré pour la section "Ajouter un Post" -->
+        <div class="post-section-container">
+            <h2 class="left-align">Ajouter un post</h2>
+            <div id="postContainer">
+                <input type="text" id="postContent" placeholder="Quoi de neuf ?" />
+                <button onclick="addPost()">Poster</button>
+            </div>
+        </div>
+    
+        <div>
+            <h2>Fil d'actualité</h2>
+            <div id="feed"></div>
+        </div>
+    </div>
+    
+    <script type="text/javascript">
+        let web3;
+        let account;
+        let contract;
+
+        // ABI et adresse du smart contract MiniSocial
+        const contractABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_message",
+                        "type": "string"
+                    }
+                ],
+                "name": "addComment",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_commentIndex",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "deleteComment",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "deletePost",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_commentIndex",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "likeComment",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "likePost",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "string",
+                        "name": "_message",
+                        "type": "string"
+                    }
+                ],
+                "name": "publishPost",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_commentIndex",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "unlikeComment",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "unlikePost",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "commentLikes",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_commentIndex",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getComment",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getPost",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getPostLikes",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_postId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getTotalComments",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "getTotalPosts",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "postComments",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "message",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "commenter",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "likeCount",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "exists",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "postLikes",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "posts",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "message",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "author",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "likeCount",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "commentCount",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "exists",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+        const contractAddress = '0xbdEd0D2bf404bdcBa897a74E6657f1f12e5C6fb6';
+
+        // Connexion au wallet
+        async function connectWallet() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    account = (await web3.eth.getAccounts())[0];
+                    contract = new web3.eth.Contract(contractABI, contractAddress);
+                    alert(`Connecté avec le compte ${account}`);
+                    loadFeed();
+                } catch (error) {
+                    console.error("Accès au compte refusé.");
+                }
+            } else {
+                alert("Veuillez installer MetaMask.");
+            }
+        }
+
+        // Charger le fil d'actualité
+        async function loadFeed() {
+            document.getElementById("feed").innerHTML = ""; // Clear previous feed
+            const totalPosts = await contract.methods.getTotalPosts().call();
+
+            for (let i = 0; i < totalPosts; i++) {
+                const post = await contract.methods.getPost(i).call();
+                if (post[4]) { // Vérifie si le post existe
+                    const postElement = document.createElement("div");
+                    postElement.className = "post-card";
+
+                    const date = new Date().toLocaleString(); // Exemple de date actuelle pour chaque post (à ajuster si la date est stockée dans le contrat)
+                    postElement.innerHTML = `
+                        <p><strong>Message:</strong> ${post[0]}</p>
+                        <p class="post-author"><strong>Auteur:</strong> ${post[1]}</p>
+                        <p><strong>Likes:</strong> ${post[2]} | <strong>Commentaires:</strong> ${post[3]}</p>
+                        <p class="post-date"><strong>Date:</strong> ${date}</p>
+                        <div class="post-actions">
+                            <button class="like-btn" onclick="likePost(${i})">Like</button>
+                            <button class="dislike-btn" onclick="unlikePost(${i})">Dislike</button>
+                            ${post[1].toLowerCase() === account.toLowerCase() ? `<button class="edit-btn" onclick="editPost(${i})">Modifier</button><button class="delete-btn" onclick="deletePost(${i})">Supprimer</button>` : ""}
+                        </div>
+                        <div class="comment-section" id="comments-${i}">
+                            <h3>Commentaires</h3>
+                            <div id="comment-list-${i}"></div>
+                            <div class="comment-input-container">
+                                <input type="text" id="commentContent-${i}" placeholder="Ajouter un commentaire" />
+                                <button class="comment-btn" onclick="addComment(${i})">Commenter</button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById("feed").appendChild(postElement);
+                    loadComments(i); // Charger les commentaires pour chaque post
+                }
+            }
+        }
+        // Ajouter un post
+        async function addPost() {
+            const message = document.getElementById("postContent").value;
+            if (message) {
+                await contract.methods.publishPost(message).send({ from: account });
+                alert("Post ajouté !");
+                loadFeed();
+                document.getElementById("postContent").value = ""; // Reset input
+            } else {
+                alert("Veuillez écrire un message.");
+            }
+        }
+
+        // Liker un post
+        async function likePost(postId) {
+            try {
+                await contract.methods.likePost(postId).send({ from: account });
+                alert("Vous avez aimé ce post.");
+                loadFeed();
+            } catch (error) {
+                alert("Erreur lors du like.");
+            }
+        }
+
+        // Disliker un post
+        async function unlikePost(postId) {
+            try {
+                await contract.methods.unlikePost(postId).send({ from: account });
+                alert("Vous avez disliké ce post.");
+                loadFeed();
+            } catch (error) {
+                alert("Erreur lors du dislike.");
+            }
+        }
+
+        // Modifier un post (seul l'auteur peut le faire)
+        async function editPost(postId) {
+            const newMessage = prompt("Entrez le nouveau message du post:");
+            if (newMessage) {
+                const post = await contract.methods.getPost(postId).call();
+                if (post[1].toLowerCase() === account.toLowerCase()) {
+                    await contract.methods.publishPost(newMessage).send({ from: account });
+                    alert("Post modifié !");
+                    loadFeed();
+                } else {
+                    alert("Vous n'êtes pas l'auteur de ce post.");
+                }
+            }
+        }
+
+        // Supprimer un post
+        async function deletePost(postId) {
+            if (confirm("Êtes-vous sûr de vouloir supprimer ce post ?")) {
+                try {
+                    await contract.methods.deletePost(postId).send({ from: account });
+                    alert("Post supprimé !");
+                    loadFeed(); // Recharger le fil d'actualité pour mettre à jour les posts
+                } catch (error) {
+                    alert("Erreur lors de la suppression du post.");
+                    console.error(error);
+                }
+            }
+        }
+
+        // Ajouter un commentaire à un post
+        async function addComment(postId) {
+            const commentContent = document.getElementById(`commentContent-${postId}`).value;
+            if (commentContent) {
+                await contract.methods.addComment(postId, commentContent).send({ from: account });
+                alert("Commentaire ajouté !");
+                loadComments(postId); // Recharger les commentaires pour afficher le nouveau
+                document.getElementById(`commentContent-${postId}`).value = ""; // Reset input
+            } else {
+                alert("Veuillez écrire un commentaire.");
+            }
+        }
+
+// Charger les commentaires d'un post
+        async function loadComments(postId) {
+            const commentList = document.getElementById(`comment-list-${postId}`);
+            commentList.innerHTML = ""; // Clear previous comments
+            const totalComments = await contract.methods.getTotalComments(postId).call();
+
+            for (let j = 0; j < totalComments; j++) {
+                const comment = await contract.methods.getComment(postId, j).call();
+                if (comment[3]) { // Vérifie si le commentaire existe
+                    const commentElement = document.createElement("div");
+                    commentElement.className = "comment";
+                    commentElement.innerHTML = `
+                        <p><strong>${comment[1]}</strong>: ${comment[0]}</p>
+                    `;
+                    commentList.appendChild(commentElement);
+                }
+            }
+        }
+
+        // Initialisation au chargement de la page
+        window.onload = async () => {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                account = (await web3.eth.getAccounts())[0];
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+                loadFeed();
+            } else {
+                alert("Veuillez installer MetaMask pour interagir avec cette application.");
+            }
+        };
+    </script>
+</body>
+</html>
